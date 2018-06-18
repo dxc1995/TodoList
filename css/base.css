@@ -95,6 +95,22 @@ button {
 	cursor: pointer;
 }
 
+.task-item.completed {
+	color: #aaa;
+	background: rgba(255, 255, 255, .8);
+}
+
+.task-item.completed:after {
+	content: " ";
+	height: 1px;
+	background: #aaa;
+	width: 96%;
+	position: relative;
+	top: -9px;
+	display: block;
+	float: right;
+}
+
 .task-item:hover {
 	background: #ddd;
 	transition: .3s;

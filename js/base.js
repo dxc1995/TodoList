@@ -13,6 +13,7 @@
       , $update_form
       , $task_detail_content
       , $task_detail_content_input
+      , $checkbox_complete
       ;
 
     init();
@@ -37,7 +38,7 @@
     }
      
      /* 监听打开Task详情事件 */
-     function Listion_task_detail() {
+     function Listen_task_detail() {
         var index;
         $(".task-item").on("dblclick", function() {
             index = $(this).data("index");
@@ -50,6 +51,27 @@
           index = $item.data("index");
           show_task_detail(index)
         })
+     }
+     
+     /* 监听完成Task事件 */
+     function Listen_checkbox_complete() {
+        $checkbox_complete.on("click", function() {
+          var $this = $(this);
+          //var is_complete = $this.is(":checked");
+          var index = $this.parent().parent().data("index");
+          var item = get(index);
+          if (item.complete) {
+              update_task(index, {complete: false});
+          } else {
+               update_task(index, {complete: true});  
+          }
+
+        })
+
+     }
+
+     function get(index) {
+       return store.get("task_list")[index]
      }
     
      /* 查看Task详情 */
@@ -68,7 +90,7 @@
         if (!index === undefined || !task_list[index]) {
           return;
         }
-        task_list[index] =  data;
+        task_list[index] =  $.extend({}, task_list[index], data);
         refresh_task_list();
      } 
      
@@ -137,7 +159,7 @@
 
 
      /* 查找并监听所有删除按钮的点击事件 */
-     function Listion_task_delete() {
+     function Listen_task_delete() {
      	  $task_delete_trigger.on("click", function () {
         var $this = $(this);
         /* 找到删除按钮所在的task元素 */
@@ -169,8 +191,6 @@
     	if (index === undefined || !task_list[index]) return;
 
     	delete task_list[index];
-    	console.log("task_list", task_list);
-
     	/*更新LocalStorage*/
     	refresh_task_list();
 
@@ -180,7 +200,7 @@
        task_list = store.get("task_list") || [];
        if (task_list.length) {
        	  render_task_list();
-       	  Listion_task_delete();
+       	  Listen_task_delete();
        }
     }
     
@@ -188,29 +208,45 @@
     function render_task_list() {
     	var $task_list = $(".task-list");
     	$task_list.html("");
+      var complete_items = [];
     	for (var i = 0; i < task_list.length; i++) {
-    		var $task = render_task_item(task_list[i], i);
-    		$task_list.append($task);
+        var item = task_list[i];
+        if(item && item.complete) {
+           complete_items[i] = item;
+        } else {
+          var $task = render_task_item(item, i);
+          $task_list.prepend($task);
+        }
     	}
+
+      for (var j = 0; j < complete_items.length; j++) {
+        $task = render_task_item(complete_items[j], j);
+        if (!$task) continue;
+        $task.addClass("completed");
+        $task_list.append($task);
+      }
 
     	$task_delete_trigger = $(".action.delete");
       $task_detail_trigger = $(".action.detail");
-    	Listion_task_delete();
-      Listion_task_detail();
+      $checkbox_complete = $(".task-list .complete[type=checkbox]");
+    	Listen_task_delete();
+      Listen_task_detail();
+      Listen_checkbox_complete();
+      //Listen
     }
     
     /* 渲染单条Task模板 */
     function render_task_item(data, index) {
-       if (!data || !index) return;
-       var list_item_tpl = 
-       ' <div class="task-item" data-index="' + index +'">'+
-       '<span><input type="checkbox"></span>' +
-       '<span class="task-content">'+ data.content +'</span>' + 
-       '<span class="fr">'+
-       '<span class="action delete"> 删除</span>' + 
-       '<span class="action detail"> 详细</span>' +
-       '</span>'+
-       '</div>';
-     return $(list_item_tpl);
-    }
+    if (!data || !index) return;
+    var list_item_tpl =
+      '<div class="task-item" data-index="' + index + '">' +
+      '<span><input class="complete" ' + (data.complete ? 'checked' : '') + ' type="checkbox"></span>' +
+      '<span class="task-content">' + data.content + '</span>' +
+      '<span class="fr">' +
+      '<span class="action delete"> 删除</span>' +
+      '<span class="action detail"> 详细</span>' +
+      '</span>' +
+      '</div>';
+    return $(list_item_tpl);
+  }
 })();
